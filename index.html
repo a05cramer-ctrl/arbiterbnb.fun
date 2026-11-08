@@ -267,7 +267,7 @@ function render(s){const c=s.counts||{},T=s.totals||{};
   if(lp){const p=P[lp.i];$("#last").innerHTML=`Last pick <b>$${esc(lp.pick.symbol||sh(lp.pick.address))}</b>${p&&p.pnlPct!=null?` <span class="${p.pnlPct>=0?"up":"dn"}">${p.pnlPct>=0?"+":""}${num(p.pnlPct,1)}%</span>`:""}`;if(lp.cid){const w=$("#lastwhy");w.href="https://ipfs.io/ipfs/"+lp.cid;w.target="_blank";w.textContent="Its reason ↗"}}
 }
 $("#rows").innerHTML=Array.from({length:4},()=>`<div class="tr"><span><span class="sk" style="width:80px"></span></span><span><span class="sk" style="width:70px"></span></span><span class="nu x"><span class="sk" style="width:40px"></span></span><span class="nu"><span class="sk" style="width:40px"></span></span><span class="nu"><span class="sk" style="width:40px"></span></span><span class="rs"><span class="sk" style="width:46px"></span></span></div>`).join("");
-setInterval(()=>{const k=$("#clk"),l=$("#clkl");if(!S||!S.nextAskAt){k.textContent="--:--";return}
+setInterval(()=>{const k=$("#clk"),l=$("#clkl");if((!S||!S.nextAskAt)&&C.NEXT_PICK_AT){const d=Math.max(0,Math.round(C.NEXT_PICK_AT-Date.now()/1000));k.textContent=d?String(Math.floor(d/60)).padStart(2,"0")+":"+String(d%60).padStart(2,"0"):"now";l.textContent=d?"MM:SS":"PICKING";return}if(!S||!S.nextAskAt){k.textContent="--:--";return}
   if(S.paused){k.textContent="paused";l.textContent="";return}
   if(S.pending&&S.pending.requestId&&S.pending.requestId!=="0"){k.textContent="thinking";l.textContent="CLAUDE";return}
   const d=Math.max(0,Math.round(S.nextAskAt-Date.now()/1000));k.textContent=d?String(Math.floor(d/60)).padStart(2,"0")+":"+String(d%60).padStart(2,"0"):"now";l.textContent="MM:SS"},1000);
@@ -298,6 +298,16 @@ window.__arb=t=>{on=false;document.body.classList.add("intro");if(!from)pose();f
 const seen=(()=>{try{return sessionStorage.getItem("arb2")}catch(e){return null}})();
 if(seen||location.hash==="#nointro"||matchMedia("(prefers-reduced-motion: reduce)").matches)end();
 else{frame(0);Promise.race([document.fonts?document.fonts.ready:0,new Promise(r=>setTimeout(r,600))]).then(()=>{pose();start()})}
+
+/* picks made by Claude and bought by hand from the dev wallet, until the vault runs them on-chain */
+function renderManual(){const L=(C.PICKS||[]).slice().sort((a,b)=>b.at-a.at);if(!L.length||S)return;
+  $("#s1").textContent=L.length;
+  $("#rows").innerHTML=L.map(p=>{const t=new Date(p.at*1000).toISOString().slice(5,16).replace("T"," ");
+    const res=p.pnlPct!=null?`<span class="${p.pnlPct>=0?"up":"dn"}">${p.pnlPct>=0?"+":""}${num(p.pnlPct,1)}%</span>`:'<span class="pill o">open</span>';
+    const why=(p.reason?`<a href="${esc(p.reason)}" target="_blank" rel="noopener">read ↗</a>`:"—")+(p.tx?` &nbsp;<a href="https://bscscan.com/tx/${esc(p.tx)}" target="_blank" rel="noopener">tx</a>`:"");
+    return `<div class="tr"><span class="tm">${t}</span><span class="sy">$${esc(p.symbol)} <span class="pill">by hand</span></span><span class="nu x">${p.cost?num(p.cost,3):"—"}</span><span class="nu">—</span><span class="nu">${res}</span><span class="rs">${why}</span></div>`}).join("");
+  const lp=L[0];$("#last").innerHTML=`Last pick <b>$${esc(lp.symbol)}</b>`;if(lp.reason){const w=$("#lastwhy");w.href=lp.reason;w.target="_blank";w.textContent="Its reason ↗"}}
+renderManual();
 loadTen();loadStats();setInterval(loadTen,60000);setInterval(loadStats,20000);
 })();
 </script>
