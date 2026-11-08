@@ -245,7 +245,7 @@ async function loadTen(){try{const r=await fetch(API+"/api/candidates",{cache:"n
 }catch(e){}}
 
 let S=null;
-async function loadStats(){try{const r=await fetch(API+"/api/stats",{cache:"no-store"});if(!r.ok)throw 0;const s=await r.json();if(!s||!s.live)return;S=s;render(s)}catch(e){}}
+async function loadStats(){try{const r=await fetch(API+"/api/stats",{cache:"no-store"});if(!r.ok)throw 0;const s=await r.json();if(!s||!s.live||!s.counts||s.counts.rounds==null)return;S=s;render(s)}catch(e){}}
 function render(s){const c=s.counts||{},T=s.totals||{};
   $("#s1").textContent=c.positions??0; $("#s2").innerHTML=(c.open??0)+"<small>/ 3</small>";
   $("#s3").innerHTML=num(T.oracleFeesBnb,3)+"<small>BNB</small>"; $("#s4").innerHTML=num(T.burnedBnb,3)+"<small>BNB</small>";
