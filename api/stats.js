@@ -30,7 +30,7 @@ export async function readStats() {
     questionFee: () => v.questionFee(), bankroll: () => v.bankroll(), nextTradeSize: () => v.nextTradeSize(),
     paused: () => v.paused(), burnOnProfit: () => v.burnOnProfit(), lastAskedAt: () => v.lastAskedAt(),
     pending: () => v.pending(), rounds: () => v.roundsCount(), positions: () => v.positionsCount(), open: () => v.openPositions(),
-    taxIn: () => v.totalTaxIn(), oracleFees: () => v.totalOracleFees(), bought: () => v.totalBoughtBnb(), sold: () => v.totalSoldBnb(),
+    taxIn: async () => (await v.totalTaxIn()) + (await v.pendingTax().catch(() => 0n)), oracleFees: () => v.totalOracleFees(), bought: () => v.totalBoughtBnb(), sold: () => v.totalSoldBnb(),
     burnedBnb: () => v.totalBurnedBnb(), burnedTokens: () => v.totalBurnedTokens(),
     maxTrade: () => v.maxTrade(), minTrade: () => v.minTrade(), withdrawUnlockAt: () => v.withdrawUnlockAt(),
     owner: () => v.owner(), keeper: () => v.keeper(),

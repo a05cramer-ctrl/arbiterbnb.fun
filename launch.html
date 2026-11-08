@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>ARBITER · launch console</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0b0c;--p:#131315;--b:#232327;--t:#f3f3f0;--m:#8b8b92;--y:#F0B90B;--g:#3ddc84;--r:#ff6b5e}
+*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg);color:var(--t);font:14px/1.5 Geist,system-ui,sans-serif;padding:40px 20px}
+.w{max-width:760px;margin:0 auto}h1{font-size:26px;letter-spacing:-.02em}h1 img{width:30px;vertical-align:-6px;margin-right:8px;border-radius:7px}
+.sub{color:var(--m);margin:6px 0 26px}
+.s{background:var(--p);border:1px solid var(--b);border-radius:14px;padding:18px;margin-bottom:12px}
+.s h2{font-size:15px;font-weight:600;display:flex;gap:10px;align-items:center}.s h2 i{font-style:normal;font-family:'Geist Mono',monospace;font-size:11px;color:var(--m);border:1px solid var(--b);border-radius:6px;padding:1px 7px}
+.s p{color:var(--m);margin:6px 0 12px;font-size:13px}
+button{font:inherit;font-weight:600;background:var(--y);color:#111;border:0;border-radius:9px;padding:9px 14px;cursor:pointer}button:disabled{opacity:.4;cursor:default}
+button.g{background:transparent;color:var(--t);border:1px solid #33333a}
+input{font:inherit;background:#0f0f11;border:1px solid var(--b);border-radius:8px;color:var(--t);padding:8px 10px;width:100%;margin:4px 0 10px}
+label{font-size:12px;color:var(--m)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+pre{font-family:'Geist Mono',monospace;font-size:12px;background:#0f0f11;border:1px solid var(--b);border-radius:8px;padding:10px;white-space:pre-wrap;word-break:break-all;margin-top:10px}
+.ok{color:var(--g)}.bad{color:var(--r)}.warn{color:var(--y)}
+.log{font-family:'Geist Mono',monospace;font-size:12px;color:var(--m);margin-top:10px;white-space:pre-wrap}
+</style></head><body><div class="w">
+<h1><img src="logo.png">ARBITER launch console</h1>
+<p class="sub">Everything here is signed by your own wallet. Nothing leaves this page except the transactions you approve and the coin image upload to Flap.</p>
+
+<div class="s"><h2><i>1</i>Connect</h2><p>MetaMask, Rabby or Binance Wallet on BNB Chain. This wallet becomes the vault owner and the coin's creator.</p>
+<div class="row"><button id="bConnect">Connect wallet</button><span id="me" class="log"></span></div></div>
+
+<div class="s"><h2><i>2</i>Keeper wallet</h2><p>A fresh wallet that only asks the questions and closes exits (it can't move the vault's money). Its key goes into Vercel as KEEPER_PK. It needs ~0.03 BNB for gas.</p>
+<div class="row"><button id="bKeeper" class="g">Create keeper wallet</button><button id="bFund" disabled>Send it 0.03 BNB</button></div><pre id="keeperOut" hidden></pre></div>
+
+<div class="s"><h2><i>3</i>Deploy the vault</h2><p>The contract that receives the 3% tax, asks Claude every hour and buys the pick.</p>
+<button id="bVault" disabled>Deploy vault</button><div id="vaultOut" class="log"></div></div>
+
+<div class="s"><h2><i>4</i>Launch $ARBITER on Flap</h2><p>Tax token, 3% buy / 3% sell, 100% to the vault, address ending in 7777.</p>
+<label>X link</label><input id="fX" placeholder="https://x.com/...">
+<label>Website</label><input id="fWeb" value="https://arbiterbnbfun-ohjw.vercel.app">
+<label>Description</label><input id="fDesc" value="It picks one coin. Every hour. On-chain, on BNB.">
+<label>Your first buy in BNB (0 = none)</label><input id="fBuy" value="0">
+<button id="bLaunch" disabled>Launch</button><div id="launchOut" class="log"></div></div>
+
+<div class="s"><h2><i>5</i>Paste these</h2><p>Vercel → Settings → Environment Variables, then redeploy. config.js goes into the repo (or send me the CA and I'll push it).</p><pre id="envOut">Finish steps 2–4 first.</pre></div>
+</div>
+
+<script type="module">
+import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@6.13.4/+esm';
+const $=s=>document.querySelector(s), log=(id,t,c='')=>{$(id).innerHTML+=`<div class="${c}">${t}</div>`};
+const PORTAL='0xe2cE6ab80874Fa9Fa2aAE65D277Dd6B8e65C9De0', AI='0xaEe3a7Ca6fe6b53f6c32a3e8407eC5A9dF8B7E39', ROUTER='0x10ED43C718714eb63d5aA57B78B54704E256024E', IMPL='0x024f18294970B5c76c0691b87f138A0317156422';
+const NP='tuple(string name, string symbol, string meta, uint8 dexThresh, bytes32 salt, uint8 migratorType, address quoteToken, uint256 quoteAmt, address beneficiary, bytes permitData, bytes32 extensionID, bytes extensionData, uint8 dexId, uint8 lpFeeProfile, uint16 buyTaxRate, uint16 sellTaxRate, uint64 taxDuration, uint64 antiFarmerDuration, uint16 mktBps, uint16 deflationBps, uint16 dividendBps, uint16 lpBps, uint256 minimumShareBalance, address dividendToken, address commissionReceiver, uint8 tokenVersion)';
+const PORTAL_ABI=[`function newTokenV6(${NP} params) payable returns (address token)`,'event TokenCreated(uint256 ts, address creator, uint256 nonce, address token, string name, string symbol, string meta)'];
+const S=JSON.parse(localStorage.getItem('arb-launch')||'{}'); const save=()=>localStorage.setItem('arb-launch',JSON.stringify(S));
+let provider, signer, me;
+
+$('#bConnect').onclick=async()=>{
+  if(!window.ethereum){alert('No wallet found in this browser');return}
+  try{await ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x38'}]})}catch(e){ if(e.code===4902) await ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x38',chainName:'BNB Smart Chain',nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18},rpcUrls:['https://bsc-dataseed.bnbchain.org'],blockExplorerUrls:['https://bscscan.com']}]}) }
+  provider=new ethers.BrowserProvider(window.ethereum); signer=await provider.getSigner(); me=await signer.getAddress();
+  const net=await provider.getNetwork(); const bal=await provider.getBalance(me);
+  $('#me').textContent=`${me.slice(0,6)}…${me.slice(-4)} · chain ${net.chainId} · ${Number(ethers.formatEther(bal)).toFixed(4)} BNB`;
+  if(net.chainId!==56n){$('#me').innerHTML+=' <span class="bad">switch to BNB Chain</span>';return}
+  $('#bVault').disabled=!S.keeper; $('#bFund').disabled=!S.keeper; $('#bLaunch').disabled=!S.vault; render();
+};
+
+$('#bKeeper').onclick=()=>{
+  if(S.keeper&&!confirm('A keeper wallet already exists on this page. Make a new one?'))return;
+  const w=ethers.Wallet.createRandom(); S.keeper=w.address; S.keeperKey=w.privateKey; save(); render();
+  $('#bVault').disabled=!signer; $('#bFund').disabled=!signer;
+};
+$('#bFund').onclick=async()=>{ const tx=await signer.sendTransaction({to:S.keeper,value:ethers.parseEther('0.03')}); $('#keeperOut').textContent+='\nfunding tx '+tx.hash; await tx.wait(); $('#keeperOut').textContent+=' ✓'; };
+
+$('#bVault').onclick=async()=>{
+  $('#bVault').disabled=true; $('#vaultOut').innerHTML='';
+  try{
+    const art=await (await fetch('vault.json')).json();
+    const f=new ethers.ContractFactory(art.abi,art.bytecode,signer);
+    log('#vaultOut','confirm in your wallet…');
+    const c=await f.deploy(PORTAL,AI,ROUTER,S.keeper); log('#vaultOut','tx '+c.deploymentTransaction().hash);
+    await c.waitForDeployment(); S.vault=await c.getAddress(); save();
+    log('#vaultOut','vault '+S.vault+' ✓','ok'); $('#bLaunch').disabled=false; render();
+  }catch(e){log('#vaultOut',e.shortMessage||e.message,'bad');$('#bVault').disabled=false}
+};
+
+function mineSalt(){
+  const initCode='0x3d602d80600a3d3981f3363d3d373d3d3d363d73'+IMPL.slice(2).toLowerCase()+'5af43d82803e903d91602b57fd5bf3';
+  const ich=ethers.keccak256(initCode); let salt=ethers.keccak256(ethers.randomBytes(32));
+  for(let i=0;i<5e6;i++){const a=ethers.getCreate2Address(PORTAL,salt,ich); if(a.toLowerCase().endsWith('7777'))return {salt,addr:a}; salt=ethers.keccak256(salt);}
+  throw new Error('no salt found');
+}
+async function upload(){
+  const img=await (await fetch('pfp-1000.jpg')).blob();
+  const meta={website:$('#fWeb').value||null,twitter:$('#fX').value||null,telegram:null,description:$('#fDesc').value||null,creator:ethers.ZeroAddress};
+  const form=new FormData();
+  form.append('operations',JSON.stringify({query:'mutation Create($file: Upload!, $meta: MetadataInput!) { create(file: $file, meta: $meta) }',variables:{file:null,meta}}));
+  form.append('map',JSON.stringify({0:['variables.file']})); form.append('0',img,'arbiter.jpg');
+  const r=await fetch('https://funcs.flap.sh/api/upload',{method:'POST',body:form}); const j=await r.json();
+  if(!j?.data?.create) throw new Error('upload failed: '+JSON.stringify(j).slice(0,200)); return j.data.create;
+}
+$('#bLaunch').onclick=async()=>{
+  $('#bLaunch').disabled=true; $('#launchOut').innerHTML='';
+  try{
+    if(!S.vault) throw new Error('deploy the vault first');
+    log('#launchOut','uploading image + info to Flap…'); const meta=await upload(); log('#launchOut','meta '+meta);
+    log('#launchOut','finding a …7777 address…'); const {salt,addr}=mineSalt(); log('#launchOut','address '+addr);
+    const buy=ethers.parseEther($('#fBuy').value||'0');
+    const params={name:'ARBITER',symbol:'ARBITER',meta,dexThresh:1,salt,migratorType:1,quoteToken:ethers.ZeroAddress,quoteAmt:buy,beneficiary:S.vault,permitData:'0x',extensionID:ethers.ZeroHash,extensionData:'0x',dexId:0,lpFeeProfile:0,buyTaxRate:300,sellTaxRate:300,taxDuration:100n*365n*86400n,antiFarmerDuration:3600n,mktBps:10000,deflationBps:0,dividendBps:0,lpBps:0,minimumShareBalance:0n,dividendToken:ethers.ZeroAddress,commissionReceiver:ethers.ZeroAddress,tokenVersion:6};
+    const portal=new ethers.Contract(PORTAL,PORTAL_ABI,signer);
+    const sim=await portal.newTokenV6.staticCall(params,{value:buy});
+    if(sim.toLowerCase()!==addr.toLowerCase()) throw new Error('simulation gave '+sim+', expected '+addr);
+    log('#launchOut','simulation ✓ — confirm in your wallet…');
+    const tx=await portal.newTokenV6(params,{value:buy}); log('#launchOut','tx '+tx.hash); await tx.wait();
+    S.ca=addr; save(); log('#launchOut','$ARBITER '+addr+' ✓','ok');
+    log('#launchOut','linking the coin to the vault — confirm in your wallet…');
+    const v=new ethers.Contract(S.vault,['function setArbiterToken(address)'],signer); const t2=await v.setArbiterToken(addr); await t2.wait();
+    log('#launchOut','vault.setArbiterToken ✓','ok'); render();
+  }catch(e){log('#launchOut',e.shortMessage||e.message,'bad');$('#bLaunch').disabled=false}
+};
+
+function render(){
+  if(S.keeper){ $('#keeperOut').hidden=false; $('#keeperOut').textContent=`address  ${S.keeper}\nKEEPER_PK ${S.keeperKey}\n\nSave the key now (Vercel KEEPER_PK). It only lives in this browser.`; }
+  if(S.vault) $('#vaultOut').innerHTML=`<div class="ok">vault ${S.vault}</div>`;
+  if(S.ca) $('#launchOut').innerHTML=`<div class="ok">$ARBITER ${S.ca}</div>`;
+  if(S.vault){
+    const secret=S.cron||(S.cron=ethers.hexlify(ethers.randomBytes(16)).slice(2)); save();
+    $('#envOut').textContent=`Vercel environment variables
+BSC_RPC        https://bsc-rpc.publicnode.com
+LOGS_CHUNK     2500
+VAULT_ADDRESS  ${S.vault}
+KEEPER_PK      ${S.keeperKey||'(step 2)'}
+CRON_SECRET    ${secret}
+
+cron-job.org (every 5 minutes, GET)
+https://arbiterbnbfun-ohjw.vercel.app/api/tick?key=${secret}
+
+config.js
+CA: "${S.ca||''}"
+VAULT: "${S.vault}"
+CHART: "${S.ca?'https://gmgn.ai/bsc/token/'+S.ca:''}"`;
+  }
+}
+render();
+</script></body></html>

@@ -94,7 +94,7 @@ export async function blockRange(provider, fromTs, toTs, head) {
  * LOGS_CONCURRENCY in flight. A failing chunk is split in half (RPC range/result limits) down to 1 block.
  */
 export async function fetchTradeLogs(provider, portal, fromBlock, toBlock, opts = {}) {
-  const chunk = opts.chunk || envInt('LOGS_CHUNK', 3000);
+  const chunk = opts.chunk || envInt('LOGS_CHUNK', 2500);
   const conc = opts.concurrency || envInt('LOGS_CONCURRENCY', 4);
   const { bought, sold } = tradeTopics();
   const stats = { calls: 0, splits: 0, retries: 0 };

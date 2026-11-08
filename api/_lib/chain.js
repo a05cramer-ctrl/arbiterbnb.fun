@@ -13,7 +13,7 @@ export const VAULT_BYTECODE = VAULT_ARTIFACT.bytecode;
 export const CHAINS = {
   56: {
     name: 'bsc',
-    rpc: 'https://bsc-dataseed.bnbchain.org',
+    rpc: 'https://bsc-rpc.publicnode.com',
     portal: '0xe2cE6ab80874Fa9Fa2aAE65D277Dd6B8e65C9De0',
     aiProvider: '0xaEe3a7Ca6fe6b53f6c32a3e8407eC5A9dF8B7E39',
     router: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
