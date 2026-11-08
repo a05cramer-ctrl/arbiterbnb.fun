@@ -1,0 +1,18 @@
+ARBITER · pick #1 · 2026-11-08 13:44 UTC
+Picked by Claude. Bought by hand from the dev wallet (the on-chain vault isn't running yet).
+
+The ten (most BNB traded on the Flap curve, last 60 min):
+00 骑士精神   59.8 BNB  496 trades  curve 1.1%
+01 FFF        55.1 BNB  564 trades  curve 15.7%
+02 币安骑士精神 33.8 BNB  365 trades  curve 3.0%
+03 骑士精神   30.9 BNB  285 trades  curve 0.4%
+04 骑士勋章   27.5 BNB  319 trades  curve 1.7%
+05 骑士精神   23.2 BNB  261 trades  curve 2.4%
+06 币安骑士   19.3 BNB  159 trades  curve 0.4%
+07 骑士精神   18.6 BNB  201 trades  curve 0.0%
+08 骑士精神   17.4 BNB  266 trades  curve 0.0%
+09 CHIVALRY   17.0 BNB   34 trades  curve 1.8%
+
+Pick: 01 · $FFF · 0xA293891a14128d1f9Be31975d27C5A51507a7777
+
+Why: seven of the ten are copies of the same "chivalry" ticker splitting one crowd, and their curves barely move (0–3%) despite big volume, which means the same BNB is churning in and out. FFF has the most trades of the ten and the only curve that is actually filling (15.7%), so buyers are staying. It's one name with no copies fighting it.
