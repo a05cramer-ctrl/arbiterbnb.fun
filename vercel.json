@@ -1,0 +1,6 @@
+{
+  "crons": [{ "path": "/api/tick", "schedule": "*/5 * * * *" }],
+  "functions": {
+    "api/*.js": { "maxDuration": 60, "includeFiles": "api/_lib/**" }
+  }
+}

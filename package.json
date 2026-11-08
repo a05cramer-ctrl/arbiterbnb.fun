@@ -1,0 +1,19 @@
+{
+  "name": "arbiter-site",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "node scripts/test-candidates.mjs && node scripts/test-e2e.mjs",
+    "deploy:vault": "node scripts/deploy-vault.mjs",
+    "launch": "node scripts/launch-token.mjs",
+    "verify": "node scripts/verify-candidates.mjs"
+  },
+  "dependencies": {
+    "ethers": "6.17.0"
+  },
+  "devDependencies": {
+    "ganache": "7.9.2",
+    "solc": "0.8.24"
+  }
+}
