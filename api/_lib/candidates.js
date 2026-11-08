@@ -261,7 +261,7 @@ export async function computeCandidates(opts = {}) {
       if (vault) {
         let held;
         try { held = await vault.holding(e.address, { blockTag }); }
-        catch (err) { return { e, why: 'holding() failed' }; }
+        catch (err) { held = false; } // no vault deployed yet (or not our contract): nothing is held
         if (held) return { e, why: 'held by vault' };
       }
       return { e, ok: true, progress: s.progress };
